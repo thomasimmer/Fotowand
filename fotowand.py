@@ -222,7 +222,7 @@ def collect_and_filter_files(folder):
         for root, _, filenames in os.walk(folder):
             for filename in filenames:
        #         print(filename)
-                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4z', '.movz')):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')): #, '.mp4', '.mov' extension für Video File possible
                     filepath = os.path.join(root, filename)
                     year = get_year_from_path(filepath)
          #           print(filepath)
@@ -295,12 +295,13 @@ def play_media(folder, display_time):
                 display_image(filepath, screen,GL_fadetime, text, filepath1)
                 #draw_text(screen, text, filepath1)
 
+            """ Extension for Videofile possible
             elif filepath.lower().endswith(('.mp4', '.mov')):
                 # Play video
                 process = subprocess.Popen(['omxplayer', '--no-keys', '--loop', filepath])
                 time.sleep(display_time)
                 process.terminate()
-
+            """
 
             # Wait for input or move to the next file
             start_time = time.time()
