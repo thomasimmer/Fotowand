@@ -241,6 +241,7 @@ def collect_and_filter_files(folder):
 def select_files(all_files, recent_two_years_files, last_five_years_files):
     """Selects files based on the specified rules."""
     try:
+        random.seed()  # Initialisiert den Zufallszahlengenerator
         # Every 4th file from the current and last year
         recent_two_years_selected = random.sample(recent_two_years_files, min( GL_anz_2_year, len(recent_two_years_files) )) if recent_two_years_files else []
         # Every 4th file from the last 5 years
