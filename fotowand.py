@@ -27,6 +27,7 @@ def parse_arguments():
     parser.add_argument("--GL_anz_2_year", type=int, default=250, help="Number of files to select from the last 2 years (default: 250).")
     parser.add_argument("--GL_anz_5_year", type=int, default=250, help="Number of files to select from the last 5 years (default: same as GL_anz_2_year).")
     parser.add_argument("--GL_anz_all", type=int, default=500, help="Number of files to select from all files (default: 2 * GL_anz_2_year).")
+    parser.add_argument("--Displ_Time_Size", type=int, default=30, help="Show time size in Pixels (0=No Time)")
     
     return parser.parse_args()
 
@@ -128,9 +129,11 @@ def draw_text(screen, text1, text):
     font = pygame.freetype.Font(None, GL_fontsize)
     text_surface = font.render_to(screen, (0,screen.get_height()-((2*GL_fontsize)+2)), text, (255,255,255),(0,0,0))
     text_surface = font.render_to(screen, (0,screen.get_height()-(GL_fontsize+1)), text1, (255,255,255),(0,0,0))
-    #screen.blit(text_surface, (100,100))
-    #screen.blit(text_surface, position)
+    if Displ_Time_Size > 0:
+        font1 = pygame.freetype.Font(None, Displ_Time_Size)
+        text_surface = font1.render_to(screen, ((screen.get_width()-5-(5*Displ_Time_Size)),10+Displ_Time_Size),time.strftime("%H:%M"), (255,255,255),(0,0,0))
     pygame.display.update() 
+
 
 def display_image(filepath, screen, fade_duration=1,text="", filepath1=""):
     """Displays an image with correct orientation and aspect ratio."""
@@ -176,7 +179,7 @@ def display_image(filepath, screen, fade_duration=1,text="", filepath1=""):
         y_offset = (screen_height - new_height) // 2
       
         # Fade effect using an overlay surface
-        fade_steps = int(15*fade_duration)
+        fade_steps = int(25*fade_duration)
         overlay = pygame.Surface((screen_width, screen_height))
         overlay.fill((0, 0, 0))
 
@@ -202,6 +205,7 @@ def display_image(filepath, screen, fade_duration=1,text="", filepath1=""):
         current_y_offset = y_offset
         
         draw_text(screen, text, filepath1)
+
         pygame.display.flip()
 
 
@@ -221,12 +225,9 @@ def collect_and_filter_files(folder):
     try:
         for root, _, filenames in os.walk(folder):
             for filename in filenames:
-       #         print(filename)
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg')): #, '.mp4', '.mov' extension für Video File possible
                     filepath = os.path.join(root, filename)
                     year = get_year_from_path(filepath)
-         #           print(filepath)
-         #           print(year)
                     all_files.append(filepath)
                     if year in {current_year, current_year - 1}:
                         recent_two_years_files.append(filepath)
@@ -264,18 +265,14 @@ def play_media(folder, display_time):
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.font.init() 
         
-        all_files, recent_two_years_files, last_five_years_files = collect_and_filter_files(folder)
-        
-        # Select files based on rules
-        selected_files = select_files(all_files, recent_two_years_files, last_five_years_files)
-        
-        print("\n--- Selected Files ---")
-        for i, file in enumerate(selected_files, start=1):
-            print(f"{i}. {file}")
-        
         index = 0
 
         while True:
+            if index == 0:
+                all_files, recent_two_years_files, last_five_years_files = collect_and_filter_files(folder)
+                # Select files based on rules
+                selected_files = select_files(all_files, recent_two_years_files, last_five_years_files)
+
             filepath = selected_files[index]
             filepath1 = filepath
             filepath1 = filepath1.replace(folder, "")
@@ -295,6 +292,7 @@ def play_media(folder, display_time):
 
                 display_image(filepath, screen,GL_fadetime, text, filepath1)
                 #draw_text(screen, text, filepath1)
+
 
             """ Extension for Videofile possible
             elif filepath.lower().endswith(('.mp4', '.mov')):
@@ -326,6 +324,7 @@ def play_media(folder, display_time):
         
             # Automatically move to the next file after the display time
             index = (index + 1) % len(selected_files)
+            
     except Exception as e:
         print(f"Unexpected error: {e}")
         traceback.print_exc()
@@ -343,14 +342,14 @@ if __name__ == "__main__":
     GL_anz_2_year = args.GL_anz_2_year
     GL_anz_5_year = args.GL_anz_5_year
     GL_anz_all = args.GL_anz_all
+    Displ_Time_Size = args.Displ_Time_Size
+
 
     if not os.path.isdir(folder):
         print(f"Error: The specified path '{folder}' is not a directory.")
         sys.exit(1)
 
     try:
-        # Here, you would pass the parsed arguments to your play_media function or equivalent.
-        # Example:
         print(f"Folder: {folder}")
         print(f"Display_Time: {Display_Time}")
         print(f"API_KEY: {API_KEY}")
@@ -359,6 +358,7 @@ if __name__ == "__main__":
         print(f"Files (2 Years): {GL_anz_2_year}")
         print(f"Files (5 Years): {GL_anz_5_year}")
         print(f"Files (All): {GL_anz_all}")
+        print(f"Display Time Size: {Displ_Time_Size}")
 
         # Call play_media or equivalent with these parameters
         play_media(folder, Display_Time)
@@ -367,4 +367,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nProgram terminated by user.")
         pygame.mouse.set_visible(True)  # Hide the mouse cursor
-
