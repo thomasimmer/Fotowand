@@ -11,6 +11,8 @@ from threading import Thread
 from PIL import Image, ExifTags
 import requests
 import traceback
+import secrets
+
 
 current_img_surface = None
 current_x_offset = None
@@ -239,25 +241,32 @@ def collect_and_filter_files(folder):
 
     return all_files, recent_two_years_files, last_five_years_files
 
-def select_files(all_files, recent_two_years_files, last_five_years_files):
-    """Selects files based on the specified rules."""
-    try:
-        random.seed()  # Initialisiert den Zufallszahlengenerator
-        # Every 4th file from the current and last year
-        recent_two_years_selected = random.sample(recent_two_years_files, min( GL_anz_2_year, len(recent_two_years_files) )) if recent_two_years_files else []
-        # Every 4th file from the last 5 years
-        last_five_years_selected = random.sample(last_five_years_files, min( GL_anz_5_year, len(last_five_years_files) )) if last_five_years_files else []
-        # Every 2nd file from all images
-        all_selected = random.sample(all_files, min( GL_anz_all, len(all_files) ) ) if all_files else []
 
-        # Combine results and shuffle
+def secure_sample(file_list, sample_size):
+    """Sicheres, zufälliges Sampling ohne Wiederholung."""
+    if len(file_list) <= sample_size:
+        return file_list.copy()
+    return [file_list[i] for i in secrets.SystemRandom().sample(range(len(file_list)), sample_size)]
+
+def select_files(all_files, recent_two_years_files, last_five_years_files, GL_anz_2_year, GL_anz_5_year, GL_anz_all):
+    """Dateien mit echtem Zufall sicher auswählen."""
+    try:
+        # Zufällige Auswahl der Dateien mit kryptographisch sicherem Zufall
+        recent_two_years_selected = secure_sample(recent_two_years_files, GL_anz_2_year) if recent_two_years_files else []
+        last_five_years_selected = secure_sample(last_five_years_files, GL_anz_5_year) if last_five_years_files else []
+        all_selected = secure_sample(all_files, GL_anz_all) if all_files else []
+
+        # Ergebnisse zusammenführen und erneut mischen
         combined_selection = list(set(recent_two_years_selected + last_five_years_selected + all_selected))
-        random.shuffle(combined_selection)
-        return combined_selection  
+        secrets.SystemRandom().shuffle(combined_selection)
+
+        return combined_selection
+
     except Exception as e:
-        print("Error during file selection:")
+        print("Fehler bei der Dateiauswahl:")
         traceback.print_exc()
         return []
+
 
 def play_media(folder, display_time):
     try:
@@ -271,7 +280,7 @@ def play_media(folder, display_time):
             if index == 0:
                 all_files, recent_two_years_files, last_five_years_files = collect_and_filter_files(folder)
                 # Select files based on rules
-                selected_files = select_files(all_files, recent_two_years_files, last_five_years_files)
+                selected_files = select_files(all_files, recent_two_years_files, last_five_years_files,GL_anz_2_year, GL_anz_5_year, GL_anz_all)
 
             filepath = selected_files[index]
             filepath1 = filepath
